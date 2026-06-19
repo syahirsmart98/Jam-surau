@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paparan Waktu Solat Surau</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                        clock: ['Orbitron', 'sans-serif'],
+                    },
+                    colors: {
+                        surau: {
+                            dark: '#0f172a',
+                            gold: '#fbbf24',
+                            glow: '#f59e0b',
+                            card: 'rgba(30, 41, 59, 0.7)'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0f172a;
+            /* Corak latar belakang berunsur Islamik (Geometric) */
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%231e293b' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4h6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            color: white;
+            overflow: hidden; /* Sesuai untuk skrin TV, tiada scroll */
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .active-prayer {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.4) 100%);
+            border: 1px solid #fbbf24;
+            transform: scale(1.05);
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
+        }
+
+        .text-glow {
+            text-shadow: 0 0 10px rgba(251, 191, 36, 0.6);
+        }
+        
+        /* Animasi kelipan untuk titik dua (colon) pada jam */
+        .blink {
+            animation: blinker 1s linear infinite;
+        }
+        @keyframes blinker {
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col justify-between p-6">
+
+    <div id="fullscreen-overlay" class="fixed inset-0 bg-slate-950/90 z-50 flex flex-col items-center justify-center text-center p-4">
+        <div class="glass-panel p-8 rounded-2xl max-w-md border-surau-gold border">
+            <h2 class="text-2xl font-bold text-surau-gold mb-4">Sistem Paparan Surau</h2>
+            <p class="text-gray-300 mb-6">Sila klik butang di bawah untuk mengaktifkan mod skrin penuh (Full Screen Mode).</p>
+            <button onclick="activateFullscreen()" class="bg-surau-gold text-slate-950 font-bold px-6 py-3 rounded-xl hover:bg-amber-400 transition-all text-lg shadow-lg shadow-amber-500/20 w-full">
+                Buka Skrin Penuh
+            </button>
+        </div>
+    </div>
+
+    <header class="flex justify-between items-center glass-panel rounded-2xl p-6 mb-4">
+        <div>
+            <h1 class="text-3xl font-bold text-surau-gold uppercase tracking-wider">Surau Ubudiah, Parit Sakai</h1>
+            <p class="text-gray-300 text-lg mt-1" id="location-text">Muar, Malaysia</p>
+        </div>
+        <div class="text-right">
+            <h2 class="text-2xl font-semibold text-white" id="gregorian-date">Memuatkan...</h2>
+            <h3 class="text-xl text-surau-gold mt-1" id="hijri-date">Memuatkan Tarikh Hijrah...</h3>
+        </div>
+    </header>
+
+    <main class="flex-grow flex flex-col items-center justify-center text-center my-4 relative">
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div class="w-96 h-96 bg-surau-gold opacity-10 rounded-full blur-[100px]"></div>
+        </div>
+        
+        <div class="z-10">
+            <p class="text-2xl text-gray-300 mb-2 uppercase tracking-widest font-semibold">Waktu Sekarang</p>
+            <div class="font-clock text-[10rem] leading-none font-bold text-white text-glow flex items-baseline justify-center">
+                <span id="hour">00</span>
+                <span class="blink text-surau-gold mx-2">:</span>
+                <span id="minute">00</span>
+                <span class="text-4xl ml-4 text-surau-gold" id="ampm">AM</span>
+            </div>
+            <div class="font-clock text-4xl text-gray-400 mt-2" id="second">00</div>
+        </div>
+
+        <div class="mt-10 glass-panel px-8 py-3 rounded-full border-surau-gold/40 border">
+            <p class="text-xl">Seterusnya: <span id="next-prayer-name" class="font-bold text-surau-gold text-2xl ml-2">Memuatkan...</span> dalam <span id="countdown" class="font-bold text-white ml-1">--:--:--</span></p>
+        </div>
+    </main>
+
+    <footer class="grid grid-cols-6 gap-4 mt-auto">
+        <div id="card-subuh" class="glass-panel rounded-xl p-6 text-center transition-all duration-300">
+            <h3 class="text-xl font-semibold text-gray-300 uppercase tracking-wider mb-2">Subuh</h3>
+            <p class="text-3xl font-bold text-white" id="time-subuh">--:--</p>
+        </div>
+        <div id="card-syuruk" class="glass-panel rounded-xl p-6 text-center transition-all duration-300">
+            <h3 class="text-xl font-semibold text-gray-300 uppercase tracking-wider mb-2">Syuruk</h3>
+            <p class="text-3xl font-bold text-white" id="time-syuruk">--:--</p>
+        </div>
+        <div id="card-zohor" class="glass-panel rounded-xl p-6 text-center transition-all duration-300">
+            <h3 class="text-xl font-semibold text-gray-300 uppercase tracking-wider mb-2">Zohor</h3>
+            <p class="text-3xl font-bold text-white" id="time-zohor">--:--</p>
+        </div>
+        <div id="card-asar" class="glass-panel rounded-xl p-6 text-center transition-all duration-300">
+            <h3 class="text-xl font-semibold text-gray-300 uppercase tracking-wider mb-2">Asar</h3>
+            <p class="text-3xl font-bold text-white" id="time-asar">--:--</p>
+        </div>
+        <div id="card-maghrib" class="glass-panel rounded-xl p-6 text-center transition-all duration-300">
+            <h3 class="text-xl font-semibold text-gray-300 uppercase tracking-wider mb-2">Maghrib</h3>
+            <p class="text-3xl font-bold text-white" id="time-maghrib">--:--</p>
+        </div>
+        <div id="card-isyak" class="glass-panel rounded-xl p-6 text-center transition-all duration-300">
+            <h3 class="text-xl font-semibold text-gray-300 uppercase tracking-wider mb-2">Isya'</h3>
+            <p class="text-3xl font-bold text-white" id="time-isyak">--:--</p>
+        </div>
+    </footer>
+
+    <script>
+        // Pembolehubah Global
+        let prayerTimesRaw = {}; // Simpan masa dalam format HH:mm 24jam
+        const prayerNames = [
+            { id: 'subuh', apiName: 'Fajr', label: 'Subuh' },
+            { id: 'syuruk', apiName: 'Sunrise', label: 'Syuruk' },
+            { id: 'zohor', apiName: 'Dhuhr', label: 'Zohor' },
+            { id: 'asar', apiName: 'Asr', label: 'Asar' },
+            { id: 'maghrib', apiName: 'Maghrib', label: 'Maghrib' },
+            { id: 'isyak', apiName: 'Isha', label: 'Isya\'' }
+        ];
+
+        // Tetapan Lokasi Lalai
+        const city = "Muar";
+        const country = "Malaysia";
+
+        // FUNGSI SKRIN PENUH (FULLSCREEN)
+        function activateFullscreen() {
+            const docEl = document.documentElement;
+            
+            if (docEl.requestFullscreen) {
+                docEl.requestFullscreen();
+            } else if (docEl.mozRequestFullScreen) { // Firefox
+                docEl.mozRequestFullScreen();
+            } else if (docEl.webkitRequestFullscreen) { // Chrome, Safari & Opera
+                docEl.webkitRequestFullscreen();
+            } else if (docEl.msRequestFullscreen) { // IE/Edge
+                docEl.msRequestFullscreen();
+            }
+
+            // Sembunyikan overlay selepas fullscreen aktif
+            document.getElementById('fullscreen-overlay').style.display = 'none';
+        }
+
+        // Fungsi Kemaskini Jam Utama
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            let seconds = now.getSeconds();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+
+            // Tukar format 12 jam
+            hours = hours % 12;
+            hours = hours ? hours : 12; // Jika 0 jadi 12
+
+            // Tambah sifar di hadapan jika nombor tunggal
+            hours = hours < 10 ? '0' + hours : hours;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+
+            document.getElementById('hour').textContent = hours;
+            document.getElementById('minute').textContent = minutes;
+            document.getElementById('second').textContent = seconds;
+            document.getElementById('ampm').textContent = ampm;
+
+            updateDateAndHijri(now);
+            calculateNextPrayer(now);
+        }
+
+        // Format Tarikh
+        function updateDateAndHijri(now) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const gregDateStr = now.toLocaleDateString('ms-MY', options);
+            document.getElementById('gregorian-date').textContent = gregDateStr;
+            
+            // Tarikh Hijrah (Anggaran menggunakan Int.DateTimeFormat)
+            const hijriOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+            const hijriDateStr = new Intl.DateTimeFormat('ms-MY-u-ca-islamic', hijriOptions).format(now);
+            document.getElementById('hijri-date').textContent = hijriDateStr + "H";
+        }
+
+        // Format waktu 24-jam ke 12-jam untuk paparan
+        function format12Hour(time24) {
+            let [h, m] = time24.split(':');
+            h = parseInt(h);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12;
+            h = h ? h : 12;
+            return `${h}:${m} <span class="text-sm font-normal text-surau-gold">${ampm}</span>`;
+        }
+
+        // Dapatkan data dari API
+        async function fetchPrayerTimes() {
+            try {
+                const zone = "JHR04";
+                const response = await fetch(`https://api.waktusolat.app/v2/solat/${zone}`);
+                const data = await response.json();
+
+                const today = new Date();
+                const todayDay
